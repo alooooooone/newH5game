@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>打气球游戏</title>
+    <style>
+        #all_canvas {
+            position: relative;
+            width: 960px;
+            margin: 0 auto;
+        }
+    
+        #canvas1 {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 1;
+        }
+    
+        #canvas2 {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="all_bg">
+        <div id="all_canvas">
+            <canvas id="canvas1" width="960" height="640"></canvas>
+            <canvas id="canvas2" width="960" height="640"></canvas>
+        </div>
+    </div>
+    <script src="./tools/dom.js"></script>
+    <script src="./js/main.js"></script>
+</body>
+</html>
