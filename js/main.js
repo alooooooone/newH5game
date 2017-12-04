@@ -8,8 +8,11 @@ var Game = function() {
         balls: [],
         ballsNum: 1,
         angle: Math.PI,
-        batteryX: 480,
-        batteryY: 520,
+        battery: {
+            x: 480,
+            y: 520,
+            r: 120,
+        },
         bulls: [],
         score: 0,
         bnum: 1,
@@ -32,7 +35,6 @@ var Game = function() {
                 o.judgeGameOver(game);
                 o.updateBalls();
                 o.updateBulls();
-                log(o.balls)
             },
             o.fps
         );
@@ -41,28 +43,28 @@ var Game = function() {
     }
 
     o.drawSky = function(ctx) {
-        var linearGradSky = ctx.createLinearGradient(0, 0, 0, 640);
+        var linearGradSky = ctx.createLinearGradient(0, 0, 0, o.WINDOW_HEIGHT);
         linearGradSky.addColorStop(0.0, "blue");
         linearGradSky.addColorStop(1.0, "#fff");
         ctx.fillStyle = linearGradSky;
-        ctx.fillRect(0, 0, 960, 640);
+        ctx.fillRect(0, 0, o.WINDOW_WIDTH, o.WINDOW_HEIGHT);
 
-        var linearGradLand = ctx.createLinearGradient(0, 0, 0, 640);
+        var linearGradLand = ctx.createLinearGradient(0, 0, 0, o.WINDOW_HEIGHT);
         linearGradLand.addColorStop(0.6, "	#9ACD32");
         linearGradLand.addColorStop(1.0, "green");
         ctx.fillStyle = linearGradLand;
 
         ctx.beginPath();
         ctx.moveTo(0, 440);
-        ctx.bezierCurveTo(217, 99, 310, 503, 960, 420);
-        ctx.lineTo(960, 640);
-        ctx.lineTo(0, 640);
+        ctx.bezierCurveTo(217, 99, 310, 503, o.WINDOW_WIDTH, 420);
+        ctx.lineTo(o.WINDOW_WIDTH, o.WINDOW_HEIGHT);
+        ctx.lineTo(0, o.WINDOW_HEIGHT);
         ctx.closePath();
         ctx.fill();
 
         ctx.fillStyle = "red";
         ctx.beginPath();
-        ctx.arc(480, 640, 120, 0, Math.PI, true);
+        ctx.arc(480, o.WINDOW_HEIGHT, o.battery.r, 0, Math.PI, true);
         ctx.closePath();
         ctx.fill();
 
@@ -72,7 +74,7 @@ var Game = function() {
         ctx.fillStyle = "black";
         ctx.beginPath();
         ctx.arc(480, 580, 60, -(Math.PI - o.angle), -(Math.PI - o.angle + Math.PI), false);
-        ctx.lineTo(o.batteryX, o.batteryY);
+        ctx.lineTo(o.battery.x, o.battery.y);
         ctx.closePath();
         ctx.fill();
     }
@@ -124,32 +126,48 @@ var Game = function() {
             o.bulls[i].x += o.bulls[i].vx;
             o.bulls[i].y += o.bulls[i].vy;
 
-            if (o.bulls[i].y >= o.WINDOW_HEIGHT - o.bulls[i].r) {
+            if (o.bulls[i].y <= o.bulls[i].r) {
                 o.bulls.splice(i, 1);
+                continue
+            }
+            if (o.bulls[i].x <= o.bulls[i].r) {
+                o.bulls.splice(i, 1);
+                continue
+            }
+            if (o.bulls[i].x >= o.WINDOW_WIDTH - o.bulls[i].r) {
+                o.bulls.splice(i, 1);
+                continue
             }
         }
     }
 
     o.addScore = function() {
-
+        var deleteBalls = []
+        var deleteBulls = []
         for (var i = 0; i < o.bulls.length; i++) {
             for (var j = 0; j < o.balls.length; j++) {
-                var distance = Math.pow(o.bulls[i].x - o.balls[j].x, 2) +
-                    Math.pow(o.bulls[i].y - o.balls[j].y, 2);
-                var minDis = Math.pow(o.balls[j].r, 2) + 100;
+                var distance = o.getDis(o.bulls[i], o.balls[j])
+                var minDis = o.getMinDis(o.bulls[i], o.balls[j])
                 if (distance <= minDis) {
                     o.score += o.balls[j].score;
-                    o.balls.splice(j, 1);
+                    deleteBalls.push(j)
+                    deleteBulls.push(i)
                 }
             }
         }
+        deleteBalls.forEach((ele) => {
+            o.balls.splice(ele, 1)
+        })
+        deleteBulls.forEach((ele) => {
+            o.bulls.splice(ele, 1)
+        })
     }
 
     o.judgeGameOver = function(ctx) {
         for (var i = 0; i < o.balls.length; i++) {
             var distance = Math.pow(480 - o.balls[i].x, 2) +
-                Math.pow(640 - o.balls[i].y, 2);
-            var minDis = Math.pow(o.balls[i].r + 120, 2);
+                Math.pow(o.WINDOW_HEIGHT - o.balls[i].y, 2);
+            var minDis = Math.pow(o.balls[i].r + o.battery.r, 2);
             if (distance <= minDis) {
                 ctx.font = "48px serif";
                 ctx.fillText("GameOver", 40, 50);
@@ -183,18 +201,18 @@ var Game = function() {
             var e = event || window.event;
             var windowX = e.pageX;
             var windowY = e.pageY;
-            var all_canvas = document.getElementById('all_canvas');
+            var all_canvas = $('#all_canvas').getEle();
             var canvasX = windowX - all_canvas.offsetLeft;
             var canvasY = windowY - all_canvas.offsetTop;
             var x = canvasX - 480;
-            var y = canvasY - 640;
+            var y = canvasY - o.WINDOW_HEIGHT;
             o.angle = Math.atan(x / y);
-            o.batteryY = 640 - Math.cos(o.angle) * 120;
-            o.batteryX = 480 - Math.sin(o.angle) * 120;
+            o.battery.y = o.WINDOW_HEIGHT - Math.cos(o.angle) * o.battery.r;
+            o.battery.x = 480 - Math.sin(o.angle) * o.battery.r;
 
             bull = {
-                x: o.batteryX,
-                y: o.batteryY,
+                x: o.battery.x,
+                y: o.battery.y,
                 r: 10,
                 vx: Math.floor(-Math.sin(o.angle) * 10),
                 vy: Math.floor(-Math.cos(o.angle) * 10),
@@ -218,12 +236,12 @@ var Game = function() {
         return Math.floor(Math.random() * num)
     }
 
-    o.getMinDis = function() {
-        
+    o.getMinDis = function(circle1, circle2) {
+        return Math.pow(circle1.r + circle2.r, 2)
     }
 
-    o.getDis = function() {
-        
+    o.getDis = function(circle1, circle2) {
+        return Math.pow(circle1.x - circle2.x, 2) +Math.pow(circle1.y - circle2.y, 2)
     }
 
     return o
